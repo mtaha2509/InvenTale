@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:url_launcher/link.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(const GenerativeAISample());
 }
 
 class GenerativeAISample extends StatelessWidget {
-  const GenerativeAISample({super.key});
+  const GenerativeAISample({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -27,27 +29,38 @@ class GenerativeAISample extends StatelessWidget {
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.title});
+  const ChatScreen({Key? key, required this.title}) : super(key: key);
   final String title;
+
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   String? apiKey;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ChatWidget(apiKey: "AIzaSyAnhmR1EFQGoGR-IE0Iunh0VmX5q7Xjd0Q"),
+      body: Column(
+        children: [
+          Expanded(
+            child: ChatWidget(apiKey: "YOUR_API_KEY"),
+          ),
+          Expanded(
+            child: ImageWidget(),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class ChatWidget extends StatefulWidget {
-  const ChatWidget({required this.apiKey, super.key});
+  const ChatWidget({Key? key, required this.apiKey}) : super(key: key);
 
   final String apiKey;
 
@@ -62,6 +75,7 @@ class _ChatWidgetState extends State<ChatWidget> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _textFieldFocus = FocusNode(debugLabel: 'TextField');
   bool _loading = false;
+
   @override
   void initState() {
     super.initState();
@@ -73,7 +87,7 @@ class _ChatWidgetState extends State<ChatWidget> {
   }
 
   void _scrollDown() {
-    WidgetsBinding.instance.addPostFrameCallback(
+    WidgetsBinding.instance!.addPostFrameCallback(
           (_) => _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(
@@ -208,10 +222,10 @@ class _ChatWidgetState extends State<ChatWidget> {
 
 class MessageWidget extends StatelessWidget {
   const MessageWidget({
-    super.key,
+    Key? key,
     required this.text,
     required this.isFromUser,
-  });
+  }) : super(key: key);
 
   final String text;
   final bool isFromUser;
@@ -240,6 +254,19 @@ class MessageWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class ImageWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SvgPicture.asset(
+        'images/InvenTale.svg', // Adjust the path according to your project structure
+        width: 200, // Adjust width as needed
+        height: 200, // Adjust height as needed
+      ),
     );
   }
 }
