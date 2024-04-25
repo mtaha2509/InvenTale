@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:url_launcher/link.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(const GenerativeAISample());
@@ -15,15 +13,14 @@ class GenerativeAISample extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter + Generative AI',
+      title: 'InvenTale',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          brightness: Brightness.dark,
           seedColor: const Color.fromARGB(255, 171, 222, 244),
         ),
         useMaterial3: true,
       ),
-      home: const ChatScreen(title: 'Flutter + Generative AI'),
+      home: const ChatScreen(title: ''),
     );
   }
 }
@@ -42,22 +39,130 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
       body: Column(
         children: [
-          Expanded(
-            child: ChatWidget(apiKey: "YOUR_API_KEY"),
+          PreferredSize(
+            preferredSize: Size.fromHeight(100), // Adjust height as needed
+            child: AppBar(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(widget.title),
+                  const SizedBox(width: 16), // Add spacing between title and buttons
+                  OverlappingButtons(),
+                ],
+              ),
+            ),
           ),
           Expanded(
             child: ImageWidget(),
+          ),
+          Expanded(
+            child: ChatWidget(apiKey: "AIzaSyAnhmR1EFQGoGR-IE0Iunh0VmX5q7Xjd0Q"),
           ),
         ],
       ),
     );
   }
 }
+
+
+class OverlappingButtons extends StatefulWidget {
+  @override
+  _OverlappingButtonsState createState() => _OverlappingButtonsState();
+}
+
+class _OverlappingButtonsState extends State<OverlappingButtons> {
+  bool _isSelected = false;
+  bool _isManualSelected = false; // Track which button is selected
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        CustomPaint(
+          size: Size(200.0, 50.0),
+          painter: MyButtonPainter(_isSelected, _isManualSelected),
+        ),
+        Row(
+          children: [
+            TextButton(
+              onPressed: () => setState(() {
+                _isSelected = true;
+                _isManualSelected = true;
+              }),
+              child: Text('   Manual'),
+              style: TextButton.styleFrom(
+                foregroundColor: _isSelected ? Color(0xFF1BBAA8) : Color(0xFF203D4F),
+              ),
+            ),
+            TextButton(
+              onPressed: () => setState(() {
+                _isSelected = true;
+                _isManualSelected = false;
+              }),
+              child: Text('         With AI'),
+              style: TextButton.styleFrom(
+                foregroundColor: _isSelected ? Color(0xFF203D4F) : Color(0xFF1BBAA8),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class MyButtonPainter extends CustomPainter {
+  final bool _isSelected;
+  final bool _isManualSelected;
+
+  MyButtonPainter(this._isSelected, this._isManualSelected);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final halfWidth = size.width / 2;
+
+    final paint = Paint();
+
+    if (_isSelected) {
+      // Define the gradient colors
+      final colors = [Color(0xFF1BBAA8), Color(0xFF203D4F)];
+
+      // Create separate gradients for each half based on selection
+      final leftGradient = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _isManualSelected ? colors : [Colors.white, Colors.white],
+      ).createShader(Rect.fromLTWH(0.0, 0.0, halfWidth, size.height));
+
+      final rightGradient = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _isManualSelected ? [Colors.white, Colors.white] : colors,
+      ).createShader(Rect.fromLTWH(halfWidth, 0.0, halfWidth, size.height));
+
+      // Set paint shader based on selection
+      paint.shader = _isManualSelected ? leftGradient : rightGradient;
+    } else {
+      paint.color = Colors.white; // Default white for unselected state
+    }
+
+    final path = Path();
+    path.addRRect(RRect.fromLTRBR(0.0, 0.0, size.width, size.height, Radius.circular(10.0)));
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(MyButtonPainter oldDelegate) =>
+      _isSelected != oldDelegate._isSelected || _isManualSelected != oldDelegate._isManualSelected;
+}
+
+
+
+
+
+
 
 class ChatWidget extends StatefulWidget {
   const ChatWidget({Key? key, required this.apiKey}) : super(key: key);
@@ -90,9 +195,7 @@ class _ChatWidgetState extends State<ChatWidget> {
     WidgetsBinding.instance!.addPostFrameCallback(
           (_) => _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(
-          milliseconds: 750,
-        ),
+        duration: const Duration(milliseconds: 750),
         curve: Curves.easeOutCirc,
       ),
     );
@@ -102,26 +205,32 @@ class _ChatWidgetState extends State<ChatWidget> {
   Widget build(BuildContext context) {
     final history = _chat.history.toList();
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(0.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemBuilder: (context, idx) {
-                final content = history[idx];
-                final text = content.parts
-                    .whereType<TextPart>()
-                    .map<String>((e) => e.text)
-                    .join('');
-                return MessageWidget(
-                  text: text,
-                  isFromUser: content.role == 'user',
-                );
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                _scrollController.jumpTo(_scrollController.offset - details.primaryDelta! / 3);
               },
-              itemCount: history.length,
+              child: ListView.builder(
+                controller: _scrollController,
+                reverse: true, // Reverse the list to start from the bottom
+                itemBuilder: (context, idx) {
+                  final content = history[history.length - 1 - idx]; // Reverse index
+                  final text = content.parts
+                      .whereType<TextPart>()
+                      .map<String>((e) => e.text)
+                      .join('');
+                  return MessageWidget(
+                    text: text,
+                    isFromUser: content.role == 'user',
+                  );
+                },
+                itemCount: history.length,
+              ),
             ),
           ),
           Padding(
@@ -132,18 +241,25 @@ class _ChatWidgetState extends State<ChatWidget> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    autofocus: true,
-                    focusNode: _textFieldFocus,
-                    decoration:
-                    textFieldDecoration(context, 'Enter a prompt...'),
-                    controller: _textController,
-                    onSubmitted: (String value) {
-                      _sendChatMessage(value);
-                    },
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context)
+                          .size
+                          .width, // Adjust the percentage as needed
+                    ),
+                    child: TextField(
+                      autofocus: true,
+                      focusNode: _textFieldFocus,
+                      decoration:
+                      textFieldDecoration(context, 'Enter a prompt...'),
+                      controller: _textController,
+                      onSubmitted: (String value) {
+                        _sendChatMessage(value);
+                      },
+                    ),
                   ),
                 ),
-                const SizedBox.square(dimension: 15),
+                const SizedBox.square(dimension: 5),
                 if (!_loading)
                   IconButton(
                     onPressed: () async {
@@ -238,7 +354,7 @@ class MessageWidget extends StatelessWidget {
       children: [
         Flexible(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 400),
             decoration: BoxDecoration(
               color: isFromUser
                   ? Theme.of(context).colorScheme.primaryContainer
@@ -261,12 +377,40 @@ class MessageWidget extends StatelessWidget {
 class ImageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SvgPicture.asset(
-        'images/InvenTale.svg', // Adjust the path according to your project structure
-        width: 200, // Adjust width as needed
-        height: 200, // Adjust height as needed
-      ),
+    return Scaffold(
+        body: Builder(
+        builder: (context) {
+      return Center(
+          child: SingleChildScrollView(
+          child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+          Image.asset('assets/two.png'),
+            TextButton.icon(
+              onPressed: () {
+                // Add your functionality here
+              },
+              style: TextButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0), // Adjust as needed
+                  side: BorderSide(color: Colors.black, width: 2.0), // Bold border
+                ),
+              ),
+              label: Text('Generate Anonymous Story'),
+              icon: Transform.rotate(
+                angle: -1.0, // Adjust the angle as needed
+                child: Icon(Icons.arrow_forward), // Adjust size as needed
+              ),
+            )
+
+
+
+          ],
+          ),
+          ),
+      );
+        },
+        ),
     );
   }
 }

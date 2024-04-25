@@ -6,8 +6,10 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:url_launcher/link.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:se_project/main.dart';
 
 void main() {
